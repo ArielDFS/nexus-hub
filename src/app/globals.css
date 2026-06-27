@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: theme("colors.void");
+  color: theme("colors.text");
+}
+
+body {
+  font-family: var(--font-body), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grade sutil de fundo — estética de Command Center */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(30, 58, 95, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 58, 95, 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ===================== A NAVE (vista A / FTL) ===================== */
+
+/* Barras de atividade dos módulos */
+.am-bars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 20px;
+}
+.am-bars i {
+  flex: 1;
+  border-radius: 1px;
+  height: 30%;
+  background: theme("colors.border");
+}
+
+/* Idle: respiração suave do dot + barras lentas */
+@keyframes am-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.95; }
+}
+@keyframes am-idlebar {
+  0%, 100% { height: 25%; }
+  50% { height: 55%; }
+}
+@keyframes am-workbar {
+  0%, 100% { height: 22%; }
+  50% { height: 95%; }
+}
+@keyframes am-scan {
+  0% { top: -35%; }
+  100% { top: 115%; }
+}
+
+.am-idle .am-dot { animation: am-breathe 2.6s ease-in-out infinite; }
+.am-idle .am-bars i { animation: am-idlebar 3s ease-in-out infinite; }
+.am-idle .am-bars i:nth-child(2) { animation-delay: 0.4s; }
+.am-idle .am-bars i:nth-child(3) { animation-delay: 0.8s; }
+.am-idle .am-bars i:nth-child(4) { animation-delay: 1.2s; }
+
+.am-work .am-bars i { background: theme("colors.cyan"); animation: am-workbar 0.8s ease-in-out infinite; }
+.am-work .am-bars i:nth-child(2) { animation-delay: 0.15s; }
+.am-work .am-bars i:nth-child(3) { animation-delay: 0.3s; }
+.am-work .am-bars i:nth-child(4) { animation-delay: 0.45s; }
+
+/* Robôs nos módulos */
+@keyframes bot-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5%); }
+}
+@keyframes bot-work {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2.5%) rotate(-0.5deg); }
+}
+.bot-idle-anim { animation: bot-bob 3.2s ease-in-out infinite; }
+.bot-work-anim { animation: bot-work 0.8s ease-in-out infinite; }
+
+/* Scanline do módulo trabalhando */
+.am-scan {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 32%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 245, 255, 0.14), transparent);
+  animation: am-scan 2.4s linear infinite;
+}
+
+/* Scrollbar temática */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: theme("colors.void");
+}
+::-webkit-scrollbar-thumb {
+  background: theme("colors.border");
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: theme("colors.cyan");
+}
