@@ -1,5 +1,14 @@
 # NEXUS HUB — Manifesto de Assets da Nave (2D / FTL)
 
+> ## ⚠️ ATUALIZAÇÃO (ADR-0008) — virada para RENDER ÚNICO
+> A abordagem **modular** descrita abaixo (casco + `room-floor` + `room-frame` + `equip-*` montados por código) foi **SUPERADA**. Decisão atual:
+> - **A nave/cômodos = UM render coeso único** (gerado num prompt só, estilo da referência "img 3"), com os cômodos e equipamentos **já pintados na imagem**. Layout **congelado** em troca de coerência visual máxima. Ver `prompt da nave` no fim deste arquivo.
+> - **Os robôs continuam camada de código por cima** — `bot-idle.png`, `bot-working.png` e o sprite sheet `bot-walk.png` (→ `bot-walk-cut.png` com alpha) seguem **válidos**. O recolor por agente continua via `hue-rotate`.
+> - O **console docado**, glows de foco e partículas continuam em **CSS/HTML**, não no render.
+> - O HUD tycoon (Revenue/Orders/Day) está **descartado** por enquanto.
+>
+> As seções "modulares" abaixo ficam como **referência histórica** (ainda úteis pros prompts do robô). O prompt do render único está em **`## Prompt da nave (render único)`** no fim.
+
 Guia para **gerar por IA** (Leonardo.ai) os assets 2D da nave. A grade de salas e a coloração dos personagens são feitas por **código** — IA gera peças atômicas (consistentes), o código tila, alinha e tinge. Drop dos PNGs finais em `public/ship/`.
 
 ## Decisões travadas (grelha)
@@ -116,3 +125,71 @@ Objetivo: máxima **consistência** entre as 12 peças + economia de **crédito 
 - Confirme **fundo transparente** real (sem halo). Se houver, Remove Background.
 - **Trim** (aparar) e centralizar cada sprite.
 - Exporte PNG. Nomeie EXATAMENTE como na tabela do manifesto e jogue em `public/ship/`.
+
+---
+
+# Prompt da nave (render único) — ADR-0008 ✅ ATUAL
+
+Objetivo: **1 PNG transparente** com **casco + 8 salas + ponte** já pintados, top-down, estilo da img 3. **Robôs, console e HUD NÃO entram** (são camada de código por cima). Nome do arquivo final: `ship-render.png`.
+
+## Style bible (colar no prompt)
+> `top-down 3/4 view, hand-painted 2D game art, detailed sci-fi spaceship cutaway interior seen from above, soft cel shading, clean dark outlines, dramatic neon rim lighting, FTL-inspired (original, not copyrighted), transparent background, no text, no UI`
+
+**Paleta base:** casco/painéis `#0D1B2A`/`#112233`, linhas `#1E3A5F`, detalhe rust `#C2603A`. Cada sala puxa a cor do seu agente (abaixo). Luz vinda de cima.
+
+## Composição (HÍBRIDO — casco orgânico + miolo em grade)
+- **Casco externo orgânico:** cockpit/ponte pontudo à **direita** (proa), **duas naceles de motor** à esquerda (popa) com thrusters brilhando ciano, listras rust-orange no casco, luzes de navegação.
+- **Miolo:** **grade regular 4×2 de 8 salas quadradas**, separadas por **paredes/bulkheads metálicos** com conectores de porta entre elas. **Ponte/reator central** decorativa (núcleo pulsando ciano).
+- **Cada sala (regra de ouro):** equipamento temático **encostado nas bordas/paredes**, com o **chão central VAZIO e plano** — é ali que o robô fica (no código). Tudo visto **de cima**.
+- **Fundo:** 100% **transparente** (alpha) ao redor do casco — sem espaço/nebulosa pintada (vem do CSS).
+
+## As 8 salas (cor do agente + equipamento)
+| # | Sala | Cor | Equipamento (nas bordas) |
+|---|---|---|---|
+| 1 | NEXUS | ciano `#00F5FF` | racks de servidor, núcleos de banco de dados brilhando |
+| 2 | ARIA | violeta `#7B2FBE` | antena de radar / array de scanner |
+| 3 | ECHO | dourado `#FFD700` | mesa holográfica de escrita, impressora de documentos |
+| 4 | FORGE | vermelho `#FF4C4C` | braço fabricador, forja / impressora 3D |
+| 5 | PHANTOM | aço `#5A7A94` | compactador de dados, console de arquivo |
+| 6–8 | (vagas) | cinza dim | escotilha selada, listras de "em construção", apagada |
+| — | Ponte/Reator | ciano | núcleo de reator central pulsando |
+
+## Settings (Leonardo.ai)
+- **Dimensão:** wide **~2048×1280**, depois upscale. Alpha PNG ligado.
+- **Style Reference:** suba a **img 3** (peso ~0.5) p/ colar o render no estilo que você aprovou.
+- Alchemy/PhotoReal **OFF** ao iterar; CFG ~7; 1–2 imagens por geração.
+- **Negative:** `photo, realistic, 3d render, robot, character, people, crew, text, watermark, UI, HUD, docked console, opaque background, painted starfield, cast shadow outside hull, blurry`
+
+## Plano B (se 1 prompt não fechar as 8 salas com nitidez)
+Gere o **casco + grade de salas vazias + ponte** primeiro (sem equipamento); depois **inpaint/regional prompt** o equipamento de cada sala uma a uma (com a mesma Style Reference). O alvo continua sendo **1 render final** consolidado.
+
+## Integração (código) — depois de gerar
+1. Drop em `public/ship/ship-render.png`.
+2. Eu meço a caixa `{x,y,w,h}` (em % da imagem) de **cada uma das 8 salas + ponte** e defino um config `ROOMS` no `ShipView`.
+3. O código ancora, por sala, o **robô** (idle/walk/working, tingido por `hue-rotate`) + o **hotspot clicável** + glows de foco/partículas, **por cima** do PNG.
+4. Como o miolo é grade regular, o mapeamento é quase uniforme — afino as caixas na mão a partir da imagem real.
+
+---
+
+# Props de decoração das salas (atlas → fatiamento)
+
+Equipamento e mobília que vestem as salas. Gerados por IA como **sprite sheets** e fatiados por código em props individuais com alpha.
+
+## Pipeline de fatiamento (decidido)
+1. Gerar o atlas (ChatGPT/DALL·E): grade **4×3 = 12 props**, props separados, mesmo estilo da nave.
+2. ⚠️ Os sheets do ChatGPT vêm em **RGB com o xadrez "transparente" achatado na imagem** (não é alpha real). O script remove o xadrez por **flood-fill a partir das bordas** (o fundo é claro/dessaturado; para no contorno escuro do prop), fatia em **4×3** e **apara no alpha** (bbox + margem).
+3. Saída: 1 PNG por prop em `public/ship/props/` (ex.: `server-rack.png`, `sofa.png`…). Script de referência: `scratchpad/slice.py` (lógica reaproveitável).
+
+## ⚠️ Vista dos props: FRONTAL, não isométrica (decidido)
+A 1ª leva saiu **isométrica/diagonal** e foi **rejeitada**: a sala é top-down, o robô é 3/4 frontal, e props 3/4 criam **três perspectivas brigando** + não encostam nas paredes. Decisão: **regerar em vista FRONTAL/elevação** (prop encara a câmera, base plana no chão, encosta na parede de fundo — estilo FTL). Mesmos 12 itens.
+
+## Recolor
+Props ficam **ciano + metal neutro**. A cor por agente NÃO vem de `hue-rotate` por prop — vem do **glow ambiente da sala** (layer CSS `room-tint` na `--accent`). Mantém os props neutros e a sala colorida.
+
+## Prompt — props FRONTAIS (colar no ChatGPT, anexar `ship-render.png`)
+> `Create a 2D game asset sheet: a grid of separate sci-fi room equipment props, drawn in FRONT VIEW (orthographic front elevation, each object facing the viewer head-on). NOT isometric, no 3/4 angle, no diagonal tilt — flat front-facing, as if mounted against a wall. 4x3 grid (12 props), generous gaps, centered, uniform scale, no overlap, fully TRANSPARENT background. Hand-painted 2D game art, soft cel shading, clean dark outlines, neon rim lighting, FTL-inspired (original). Brushed metal in dark navy and steel grey with glowing cyan emissive panels; each prop has a flat bottom to sit on a floor; lighting from above. Props: server rack; radar dish; holographic desk with screens; fabricator arm with 3D printer; data archive console; reactor core; control terminal; supply crates; charging pod; pipes/ventilation; antenna array; storage lockers. DO NOT include floor, walls, room, scenery, robots, people, text. Wide landscape image.`
+>
+> Para a mobília (living): mesmo cabeçalho "FRONT VIEW", lista = bunk bed, sofa, office desk, chair, bookshelf, plant, floor lamp, coffee dispenser, holo TV, coffee table, wardrobe, gym bench.
+
+## Mapa de props por sala (provisório — afinar no mockup)
+No `_mockups/ship-render.html`, cada sala tem um array `props:[{f, x, y, w}]` (f=arquivo, x/y=centro em % da sala, w=largura em %). Sugestão inicial: NEXUS=server-rack+archive-console+office-desk; ARIA=radar-dish+antenna+bookshelf; ECHO=holo-desk+control-terminal+coffee-dispenser; FORGE=fabricator+pipes-vent+gym-bench; PHANTOM=archive-console+lockers+bunk-bed+plant. _(Removidos do mockup enquanto a leva frontal é regerada.)_
