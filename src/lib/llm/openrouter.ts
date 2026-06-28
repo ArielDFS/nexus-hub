@@ -31,7 +31,7 @@ export async function streamChatCompletion({
       // Atribuição recomendada pelo OpenRouter (opcional).
       "HTTP-Referer":
         process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-      "X-Title": process.env.NEXT_PUBLIC_APP_NAME ?? "NEXUS HUB",
+      "X-Title": process.env.NEXT_PUBLIC_APP_NAME ?? "STARDECK",
     },
     body: JSON.stringify({
       model,

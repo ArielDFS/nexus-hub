@@ -1,4 +1,4 @@
-# NEXUS HUB — Manifesto de Assets da Nave (2D / FTL)
+# STARDECK — Manifesto de Assets da Nave (2D / FTL)
 
 > ## ⚠️ ATUALIZAÇÃO (ADR-0008) — virada para RENDER ÚNICO
 > A abordagem **modular** descrita abaixo (casco + `room-floor` + `room-frame` + `equip-*` montados por código) foi **SUPERADA**. Decisão atual:
@@ -128,14 +128,16 @@ Objetivo: máxima **consistência** entre as 12 peças + economia de **crédito 
 
 ---
 
-# Prompt da nave (render único) — ADR-0008 ✅ ATUAL
+# Prompt da nave (render único) — ADR-0008 + ADR-0010 ✅ ATUAL
 
-Objetivo: **1 PNG transparente** com **casco + 8 salas + ponte** já pintados, top-down, estilo da img 3. **Robôs, console e HUD NÃO entram** (são camada de código por cima). Nome do arquivo final: `ship-render.png`.
+> **Casco NEUTRO (ADR-0010 #3):** as salas **não** são mais pintadas na cor do agente. Como os agentes são customizáveis (cor/quantidade/função pelo ator), o render é **neutro/dessaturado** (aço uniforme) e a **cor de cada sala vem por código** (glow CSS `.ship-roomglow`, na `--accent` do agente). O `ship-render.png` atual já está nesse estado; este prompt fica como referência caso a nave seja regerada.
+
+Objetivo: **1 PNG transparente** com **casco + 8 salas neutras + ponte**, top-down, estilo da img 3. **Robôs, console, HUD e a cor das salas NÃO entram** (são camada de código por cima). Nome do arquivo final: `ship-render.png`.
 
 ## Style bible (colar no prompt)
-> `top-down 3/4 view, hand-painted 2D game art, detailed sci-fi spaceship cutaway interior seen from above, soft cel shading, clean dark outlines, dramatic neon rim lighting, FTL-inspired (original, not copyrighted), transparent background, no text, no UI`
+> `top-down 3/4 view, hand-painted 2D game art, detailed sci-fi spaceship cutaway interior seen from above, soft cel shading, clean dark outlines, neutral desaturated steel rooms, FTL-inspired (original, not copyrighted), transparent background, no text, no UI`
 
-**Paleta base:** casco/painéis `#0D1B2A`/`#112233`, linhas `#1E3A5F`, detalhe rust `#C2603A`. Cada sala puxa a cor do seu agente (abaixo). Luz vinda de cima.
+**Paleta base:** casco/painéis/salas `#0D1B2A`/`#112233`, linhas `#1E3A5F`, detalhe rust `#C2603A` só nas naceles de motor. **Salas todas no mesmo aço neutro** — a cor por agente é aplicada por código, não pintada. Luz vinda de cima.
 
 ## Composição (HÍBRIDO — casco orgânico + miolo em grade)
 - **Casco externo orgânico:** cockpit/ponte pontudo à **direita** (proa), **duas naceles de motor** à esquerda (popa) com thrusters brilhando ciano, listras rust-orange no casco, luzes de navegação.
@@ -143,22 +145,24 @@ Objetivo: **1 PNG transparente** com **casco + 8 salas + ponte** já pintados, t
 - **Cada sala (regra de ouro):** equipamento temático **encostado nas bordas/paredes**, com o **chão central VAZIO e plano** — é ali que o robô fica (no código). Tudo visto **de cima**.
 - **Fundo:** 100% **transparente** (alpha) ao redor do casco — sem espaço/nebulosa pintada (vem do CSS).
 
-## As 8 salas (cor do agente + equipamento)
-| # | Sala | Cor | Equipamento (nas bordas) |
-|---|---|---|---|
-| 1 | NEXUS | ciano `#00F5FF` | racks de servidor, núcleos de banco de dados brilhando |
-| 2 | ARIA | violeta `#7B2FBE` | antena de radar / array de scanner |
-| 3 | ECHO | dourado `#FFD700` | mesa holográfica de escrita, impressora de documentos |
-| 4 | FORGE | vermelho `#FF4C4C` | braço fabricador, forja / impressora 3D |
-| 5 | PHANTOM | aço `#5A7A94` | compactador de dados, console de arquivo |
-| 6–8 | (vagas) | cinza dim | escotilha selada, listras de "em construção", apagada |
-| — | Ponte/Reator | ciano | núcleo de reator central pulsando |
+## As 8 salas (equipamento — TODAS no mesmo aço neutro)
+> Cor é por código (`.ship-roomglow`). O equipamento pode permanecer temático (dá variedade de silhueta), mas **pintado em aço/ciano neutro**, sem o accent do agente.
+
+| # | Sala | Equipamento (nas bordas) |
+|---|---|---|
+| 1 | NEXUS | racks de servidor, núcleos de banco de dados |
+| 2 | ARIA | antena de radar / array de scanner |
+| 3 | ECHO | mesa holográfica de escrita, impressora de documentos |
+| 4 | FORGE | braço fabricador, forja / impressora 3D |
+| 5 | PHANTOM | compactador de dados, console de arquivo |
+| 6–8 | (vagas) | escotilha selada, listras de "em construção", apagada |
+| — | Ponte/Reator | núcleo de reator central pulsando (ciano neutro) |
 
 ## Settings (Leonardo.ai)
 - **Dimensão:** wide **~2048×1280**, depois upscale. Alpha PNG ligado.
 - **Style Reference:** suba a **img 3** (peso ~0.5) p/ colar o render no estilo que você aprovou.
 - Alchemy/PhotoReal **OFF** ao iterar; CFG ~7; 1–2 imagens por geração.
-- **Negative:** `photo, realistic, 3d render, robot, character, people, crew, text, watermark, UI, HUD, docked console, opaque background, painted starfield, cast shadow outside hull, blurry`
+- **Negative:** `photo, realistic, 3d render, robot, character, people, crew, text, watermark, UI, HUD, docked console, opaque background, painted starfield, cast shadow outside hull, blurry, multicolor rooms, per-room colored lighting, saturated neon room interiors`
 
 ## Plano B (se 1 prompt não fechar as 8 salas com nitidez)
 Gere o **casco + grade de salas vazias + ponte** primeiro (sem equipamento); depois **inpaint/regional prompt** o equipamento de cada sala uma a uma (com a mesma Style Reference). O alvo continua sendo **1 render final** consolidado.
@@ -184,7 +188,7 @@ Equipamento e mobília que vestem as salas. Gerados por IA como **sprite sheets*
 A 1ª leva saiu **isométrica/diagonal** e foi **rejeitada**: a sala é top-down, o robô é 3/4 frontal, e props 3/4 criam **três perspectivas brigando** + não encostam nas paredes. Decisão: **regerar em vista FRONTAL/elevação** (prop encara a câmera, base plana no chão, encosta na parede de fundo — estilo FTL). Mesmos 12 itens.
 
 ## Recolor
-Props ficam **ciano + metal neutro**. A cor por agente NÃO vem de `hue-rotate` por prop — vem do **glow ambiente da sala** (layer CSS `room-tint` na `--accent`). Mantém os props neutros e a sala colorida.
+Props ficam **ciano + metal neutro**. A cor por agente NÃO vem de `hue-rotate` por prop — vem do **glow ambiente da sala** (layer CSS `.ship-roomglow` na `--accent`). Mantém os props neutros e a sala colorida.
 
 ## Prompt — props FRONTAIS (colar no ChatGPT, anexar `ship-render.png`)
 > `Create a 2D game asset sheet: a grid of separate sci-fi room equipment props, drawn in FRONT VIEW (orthographic front elevation, each object facing the viewer head-on). NOT isometric, no 3/4 angle, no diagonal tilt — flat front-facing, as if mounted against a wall. 4x3 grid (12 props), generous gaps, centered, uniform scale, no overlap, fully TRANSPARENT background. Hand-painted 2D game art, soft cel shading, clean dark outlines, neon rim lighting, FTL-inspired (original). Brushed metal in dark navy and steel grey with glowing cyan emissive panels; each prop has a flat bottom to sit on a floor; lighting from above. Props: server rack; radar dish; holographic desk with screens; fabricator arm with 3D printer; data archive console; reactor core; control terminal; supply crates; charging pod; pipes/ventilation; antenna array; storage lockers. DO NOT include floor, walls, room, scenery, robots, people, text. Wide landscape image.`

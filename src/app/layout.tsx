@@ -19,9 +19,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "NEXUS HUB — Gamified AI Agent Hub",
+  title: "STARDECK — Gamified AI Agent Crew",
   description:
-    "Recrute agentes de IA, lance missões e evolua seu Comandante. Plataforma sci-fi de agentes de IA.",
+    "Monte sua tripulação de agentes de IA, lance missões e evolua seu Comandante. Nave sci-fi de agentes de IA.",
 };
 
 export default function RootLayout({

@@ -9,10 +9,6 @@ import {
   WALK_SHEET, POSE_SHEET,
 } from "@/lib/ship/rooms";
 import { hueRotateDeg } from "@/lib/ship/recolor";
-import {
-  cosmeticSrc, dirToCosmetic,
-  COSMETIC_W_RATIO, COSMETIC_DY_RATIO, COSMETIC_DX_RATIO,
-} from "@/lib/ship/cosmetics";
 
 interface ShipRoomProps {
   agent: AgentInstance;
@@ -47,19 +43,14 @@ export function ShipRoom({
   const moduleRef = useRef<HTMLDivElement>(null);
   const unitRef = useRef<HTMLDivElement>(null);
   const botRef = useRef<HTMLDivElement>(null);
-  const cosmeticRef = useRef<HTMLImageElement>(null);
   const ctrlRef = useRef<{
     startWorking: () => void;
     stopWorking: () => void;
-    refreshCosmetic: () => void;
   } | null>(null);
 
   // estado vivo lido pelos timers: perambula quando NÃO está em missão.
   const workingRef = useRef(isWorking);
   workingRef.current = isWorking;
-  // cosmético equipado, lido pela camada imperativa
-  const equippedRef = useRef(agent.equippedCosmetic);
-  equippedRef.current = agent.equippedCosmetic;
 
   const accent = agent.accentColor;
   const hue = `${hueRotateDeg(accent)}deg`;
@@ -84,23 +75,8 @@ export function ShipRoom({
     let wanderTimer: ReturnType<typeof setTimeout> | null = null;
     let arriveTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const updateCosmetic = () => {
-      const cos = cosmeticRef.current;
-      if (!cos) return;
-      const id = equippedRef.current;
-      if (!id) {
-        cos.style.display = "none";
-        return;
-      }
-      cos.style.display = "block";
-      cos.style.width = `${CELL * COSMETIC_W_RATIO}px`;
-      cos.src = cosmeticSrc(id, dirToCosmetic(st.dir));
-      const flip = st.dir === "side" && st.flip ? -1 : 1;
-      cos.style.transform = `translate(-50%,-50%) translate(${COSMETIC_DX_RATIO * CELL}px, ${COSMETIC_DY_RATIO * CELL}px) scaleX(${flip})`;
-    };
     const applyFlip = () => {
       bot.style.transform = `translate(-50%,-50%) scaleX(${st.dir === "side" && st.flip ? -1 : 1})`;
-      updateCosmetic();
     };
     const setWalkCell = () => {
       bot.style.backgroundPosition = `${-st.frame * CELL}px ${-DIRIDX[st.dir] * CELL}px`;
@@ -202,8 +178,6 @@ export function ShipRoom({
       },
       // missão terminou: volta ao idle; o perambular reassume no próximo tick
       stopWorking: () => showIdle(),
-      // re-aplica o cosmético (ao equipar/desequipar)
-      refreshCosmetic: () => updateCosmetic(),
     };
 
     return () => {
@@ -221,15 +195,10 @@ export function ShipRoom({
     else ctrlRef.current?.stopWorking();
   }, [isWorking]);
 
-  // cosmético equipado mudou → re-aplica na camada do robô
-  useEffect(() => {
-    ctrlRef.current?.refreshCosmetic();
-  }, [agent.equippedCosmetic]);
-
   return (
     <div
       ref={moduleRef}
-      className={`ship-module ${isFocused ? "focused" : ""}`}
+      className={`ship-module ${isFocused ? "focused" : ""} ${isWorking ? "working" : ""}`}
       style={
         {
           left: `${room.box.l}%`,
@@ -241,6 +210,7 @@ export function ShipRoom({
         } as React.CSSProperties
       }
     >
+      <div className="ship-roomglow" />
       <div className="ship-particles">
         {particles.map((p, i) => (
           <i key={i} style={{ left: p.left, top: p.top, animationDelay: p.delay }} />
@@ -273,8 +243,6 @@ export function ShipRoom({
           style={{ "--bot-scale": scale } as React.CSSProperties}
         >
           <div ref={botRef} className="ship-bot" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img ref={cosmeticRef} className="ship-cosmetic" alt="" />
         </div>
       </div>
     </div>

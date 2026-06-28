@@ -127,9 +127,21 @@ body {
 /* a nave (render real como fundo) */
 .ship-bg {
   position: relative;
-  background: url("/ship/ship-render.png") center / contain no-repeat;
-  filter: drop-shadow(0 0 40px rgba(0, 80, 140, 0.35));
+  isolation: isolate;
   animation: ship-fade 1s ease-out both;
+}
+/* casco neutro (ADR-0010): o render é uma camada própria, levemente
+   dessaturada, para a cor de cada sala vir 100% por código (.ship-roomglow)
+   e não pintada no asset. Fica numa pseudo-camada para o saturate() não lavar
+   robôs/props/glow (que são filhos de .ship-bg). */
+.ship-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url("/ship/ship-render.png") center / contain no-repeat;
+  filter: saturate(0.82) drop-shadow(0 0 40px rgba(0, 80, 140, 0.35));
+  pointer-events: none;
 }
 @keyframes ship-fade {
   from { opacity: 0; }
@@ -144,6 +156,35 @@ body {
 }
 .ship-module.focused {
   z-index: 5;
+}
+
+/* cor da sala aplicada POR CÓDIGO (ADR-0010): glow ambiente na cor do agente,
+   sobre o casco neutro. Salas vagas não têm módulo → ficam neutras de propósito.
+   Bleed vertical (linhas separadas) ok; horizontal mínimo p/ não vazar p/ a vizinha. */
+.ship-roomglow {
+  position: absolute;
+  inset: -4% -1%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 16%;
+  background: radial-gradient(
+    ellipse at 50% 55%,
+    color-mix(in srgb, var(--accent) 42%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 15%, transparent) 46%,
+    transparent 72%
+  );
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
+}
+.ship-module.focused .ship-roomglow {
+  opacity: 0.82;
+  animation: ship-roompulse 2.6s ease-in-out infinite;
+}
+.ship-module.working .ship-roomglow {
+  opacity: 0.95;
+}
+@keyframes ship-roompulse {
+  50% { opacity: 0.96; }
 }
 
 /* unit = robô + nome (move junto, é o alvo de clique) */
@@ -263,17 +304,6 @@ body {
   inset: 0;
   transform: scale(var(--bot-scale, 1));
   transform-origin: center;
-}
-
-/* cosmético equipado (camada sobre a cabeça do robô; recolor = mesmo hue) */
-.ship-cosmetic {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  pointer-events: none;
-  image-rendering: auto;
-  z-index: 1;
-  filter: hue-rotate(var(--hue));
 }
 
 /* o robô (sprite) */
@@ -407,4 +437,78 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: theme("colors.cyan");
+}
+
+/* ===== Manifesto (drawer de gerência — ADR-0011) ===== */
+/* assinatura: trilho na cor da sala + nó de Atividade; cascata ao abrir. */
+.manifesto-row {
+  --accent: theme("colors.cyan");
+}
+.manifesto-rail {
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent);
+  transform-origin: top center;
+  animation: manifesto-rail-in 0.42s ease-out both;
+  pointer-events: none;
+}
+@keyframes manifesto-rail-in {
+  from { opacity: 0; transform: scaleY(0); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+.manifesto-node {
+  position: absolute;
+  left: 2.5px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  border: 1.5px solid var(--accent);
+  pointer-events: none;
+}
+.manifesto-node.idle {
+  background: theme("colors.surface");
+  opacity: 0.5;
+}
+.manifesto-node.focused {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+.manifesto-node.working {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: manifesto-node-pulse 1.1s ease-in-out infinite;
+}
+@keyframes manifesto-node-pulse {
+  0%, 100% { box-shadow: 0 0 6px var(--accent); }
+  50% { box-shadow: 0 0 15px var(--accent), 0 0 4px var(--accent); }
+}
+
+/* ===== Terminal (console docado — ADR-0011) ===== */
+/* scanlines sutis sobre a saída do console. */
+.terminal-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manifesto-rail { animation: none; }
+  .manifesto-node.working { animation: none; }
 }

@@ -1,7 +1,7 @@
-# CLAUDE.md — NEXUS HUB
+# CLAUDE.md — STARDECK
 
 > Fonte única de contexto do projeto. Consolida escopo, decisões, glossário e ADRs.
-> Projeto: Gamified AI Agent Hub (codinome `NEXUS HUB`) | Autor: Ariel Ferreira (AFS Intelligence)
+> Projeto: STARDECK — Gamified AI Agent Crew (ex-codinome `NEXUS HUB`) | Autor: Ariel Ferreira (AFS Intelligence)
 
 ---
 
@@ -46,10 +46,14 @@ Termos abaixo são opinionados: quando há sinônimos, use o canônico e evite o
 
 - **Blueprint** — semente **imutável no código** de um agente (ex.: NEXUS, ARIA). Define os valores iniciais (nome, cor, system prompt, capacidades, modelo, identidade visual). Não é editável pelo ator; serve de ponto de partida e de "restaurar padrão". Os 5 presets do MVP são Blueprints.
   _Evite:_ preset (informal ok), template, receita.
-- **Agente** — **instância viva** de um agente na nave do ator, semeada de um Blueprint e **editável** (nome, cor, tagline, system prompt, capacidades, modelo, cosméticos). Persistida no `localStorage` (copy-on-write: editar o Agente nunca altera o Blueprint). É o que ocupa uma célula da nave e roda Missões.
+- **Agente** — **instância viva** de um agente na nave do ator, semeada de um Blueprint e **editável** (nome, cor, tagline, system prompt, capacidades, modelo). Persistida no `localStorage` (copy-on-write: editar o Agente nunca altera o Blueprint). É o que ocupa uma célula da nave e roda Missões.
   _Evite:_ bot, assistente, persona, personagem (o Blueprint é a definição; o Agente é a instância).
 - **Roster** — o conjunto de Agentes que o ator montou na nave (em `localStorage`). Semeado dos 5 Blueprints no primeiro load; editável até o teto de células do casco.
   _Evite:_ tripulação (ok informal), lista, time.
+- **Manifesto** — o painel lateral (drawer em overlay, escondido por padrão) que **surfaceia o Roster** + progressão + ajustes da nave **e hospeda o editor do Agente** (ADR-0011, atualizada). É a *UI* de gerência; o **Roster** é o *conjunto de dados* que ele mostra. Tem duas views: **lista** (navega/observa, foca um Agente) e **edição** (a única superfície de edição — o card virou só-leitura).
+  _Evite:_ sidebar (informal ok), menu, dashboard.
+- **Atividade** — estado *runtime* de um Agente: `idle` / `em missão` / `focado`. Como só **1 Missão real roda por vez** (ADR-0007), "em missão" vale para no máximo um. Desambigua o termo sobrecarregado "estado" (que também podia significar config ou stats).
+  _Evite:_ status, estado (ambíguos).
 - **Capacidade** — habilidade de ferramenta que um Agente pode ter ligada (começa por **busca web**; ARIA = Blueprint com busca ligada). Distinta do system prompt (comportamento textual). Renderiza eventos de função visíveis no console (§10.1).
   _Evite:_ tool, skill, função (ambíguo).
 - **Missão** — uma execução de tarefa: input de um ator → Agente → resposta em streaming. Unidade que gera XP e é persistida no histórico.
@@ -69,7 +73,7 @@ Termos abaixo são opinionados: quando há sinônimos, use o canônico e evite o
 - **Modelos grátis/baratos** (Gemini/Groq) na key do host; **BYOK opcional** destrava premium (Claude).
 - **5 agentes-semente (Blueprints):** NEXUS (SQL), ECHO (relatório), FORGE (código sem execução), PHANTOM (resumo) — puro-LLM — + **ARIA (busca web real via Tavily/Brave)**. A nave **nasce com eles montados** (ADR-0010).
 - **Construtor de agentes (ADR-0010):** o ator edita/cria/apaga **Agentes** (instâncias no `localStorage`, semeadas dos Blueprints, copy-on-write) — nome, cor, `role` livre, system prompt, **capacidades** (busca web on/off) e **modelo** (host/premium). Casco = grade de **8 células** fixas, cor da sala por código. "Restaurar padrão" re-semeia. _(Puxado do backlog para o MVP.)_
-- **Gamificação local:** XP + níveis visíveis; **todos os agentes sempre disponíveis** (a trava por nível foi removida). A **única recompensa de progressão são os cosméticos** (desbloqueados por nível/missões — ADR-0009).
+- **Gamificação local:** XP + níveis visíveis; **todos os agentes sempre disponíveis** (a trava por nível foi removida). _(A recompensa de progressão por **cosméticos** foi **removida por ora** — ADR-0009 atualizada; o level-up anima mas não destrava nada até os cosméticos voltarem via skin-swap.)_
 - **Cena de assinatura — A NAVE (vista A, estilo FTL):** corte transversal de uma nave; cada agente vive em um **módulo** no casco. O agente focado **trabalha** (módulo brilhando, scanline, barras de atividade) enquanto a resposta streama num **console docado** embaixo, com um **prompt pequeno**. Os outros módulos têm **vida ambiente** (idle). Tokens fluem conforme chegam, **sem delay artificial**. Ver §10.1 e ADR-0007.
 - Deploy público na Vercel + README premium com GIF demo.
 
@@ -156,7 +160,7 @@ O demo é público, sem login, e chama LLMs reais. Defesa em camadas (ADR-0002):
 ## 7. Estrutura de pastas (estado atual)
 
 ```
-nexus-hub/
+stardeck/
 ├── public/ship/                 # assets 2D da nave (PNG) + ASSETS.md (guia de geração)
 │   ├── hull-exterior.png        # casco (gerado por IA, recortado)
 │   ├── bot-idle.png  bot-working.png   # robô uniforme (2 poses, aparados)
@@ -273,7 +277,7 @@ export const LEVELS = [
   { level: 6, title: 'Arquiteto',    xpRequired: 6000 },
 ] as const
 ```
-> A trava de agentes por nível (`unlockLevel`) foi **removida** — todos os agentes ficam sempre disponíveis. A progressão acontece via **cosméticos** (ADR-0009).
+> A trava de agentes por nível (`unlockLevel`) foi **removida** — todos os agentes ficam sempre disponíveis. ~~A progressão acontece via **cosméticos** (ADR-0009).~~ _Cosméticos removidos por ora (ADR-0009 atualizada); progressão sem recompensa de desbloqueio até voltarem._
 
 ### Cálculo de XP
 ```typescript
@@ -284,11 +288,8 @@ export const LEVELS = [
 ### Créditos (cosméticos)
 Custo por missão (apenas UI): PHANTOM 2, ARIA 3, NEXUS 4, FORGE 5, ECHO 6. Sem recarga real no MVP.
 
-### Cosméticos do robô (ADR-0009)
-Recompensas visuais (ex.: chapéus) **desbloqueadas por gamificação** — XP/nível/nº de missões, não compra nem seletor livre. São o vetor de variedade dos robôs (chassi único; ver ADR-0009).
-- **Schema (`localStorage`, definido já na Fatia 3 — *cosmetic-aware*):** `unlockedCosmetics: string[]` (ids globais desbloqueados) + `equippedCosmetic: Record<agentSlug, cosmeticId | null>` (o que cada robô veste).
-- **Regras de desbloqueio:** catálogo em `src/lib/ship/cosmetics.ts` (`{ level } | { missions }`), avaliado em `recordMission` (auto-unlock no level-up/missões); o `XPRewardToast` anuncia. É a **única trava de progressão** do projeto.
-- **Render (feito):** 1 PNG por cosmético **por direção** em `public/ship/cosmetics/<id>-<dir>.png` (front/back/side, casando com `bot-pose-cut.png`). Camada `.ship-cosmetic` sobre o robô (`ShipRoom`, atualizada imperativamente pela direção + flip, recolorida pelo mesmo `--hue` do agente), overlay frontal no retrato do card e **seletor no editor** (desbloqueados clicáveis; travados em 🔒 com a regra). Calibração de encaixe em `COSMETIC_W_RATIO`/`COSMETIC_DY_RATIO` (`lib/ship/cosmetics.ts`). Cosméticos reais: headset, mask, antenna, hat, crown.
+### Cosméticos do robô (ADR-0009) — ⚠️ REMOVIDO POR ORA (diferido)
+A feature de cosméticos foi **removida do código** (a camada 2D sobreposta não encaixava de forma satisfatória — ver "Atualização (FEATURE REMOVIDA)" na ADR-0009). Quando voltar, será via **skin-swap** (sheets do robô já desenhados com o item), não camada com âncora. Os assets em `public/ship/cosmetics/` ficam inertes. **Enquanto isso, a gamificação (XP/níveis) não tem recompensa de desbloqueio** — só o XP/level-up visível.
 
 ---
 
@@ -325,9 +326,11 @@ A tela principal é uma **nave top-down (estilo FTL)** — substitui o `CommandC
 
 ### 10.2. Card do agente (inspetor/editor — porta de entrada do construtor)
 
+> ⚠️ **Superado em parte pela ADR-0011 (atualização "editor migra do card → Manifesto"):** o card virou **só-leitura** (retrato + nome/role + badges + stats + botão "Editar agente"). Os **campos editáveis** descritos abaixo (nome/role inline, system prompt, busca, modelo, cor) **migraram para a view de edição do Manifesto** (`AgentEditor`). O resto desta seção (retrato, badges, stats, preview ao vivo) segue válido.
+
 Clicar no robô **foca + abre um card** ancorado na sala. Esse card **é o inspetor que expande pro editor** (não é componente separado do construtor da ADR-0010 — é o mesmo). Decisões:
 
-- **Retrato:** **zoom do rosto do sprite existente** via CSS (`overflow-hidden` + `scale` + `object-position` na cabeça) — **sem asset novo** —, tingido na cor do agente com o mesmo filtro do módulo (`TINT[slug]` + `accentColor`). O **cosmético equipado** (ADR-0009) aparece no retrato.
+- **Retrato:** **zoom do rosto do sprite existente** via CSS (`overflow-hidden` + `scale` + `object-position` na cabeça) — **sem asset novo** —, tingido na cor do agente com o mesmo filtro do módulo (`TINT[slug]` + `accentColor`). _(O overlay de cosmético no retrato foi removido — ADR-0009 diferida.)_
 - **Neon:** borda/glow no `accentColor` (mesmo padrão de `box-shadow` que o módulo já usa).
 - **Campos editáveis (instância de Agente, copy-on-write no `localStorage` — ADR-0010):** `name` e `role` (texto livre) inline no card; o editor expandido cobre system prompt, **toggle de capacidade** (busca on/off), **seletor de modelo** (host/premium) e **color picker** da cor da sala.
 - **Preview ao vivo:** digitar o nome atualiza a plaquinha sobre o módulo na hora; o color picker muda o **glow da sala em tempo real** (casa com a cor-por-código da ADR-0010).
@@ -357,15 +360,16 @@ Componentes base: Button (primary/ghost/danger/ghost-violet), Badge (class/level
 
 ## 12. Roadmap de implementação (fatias verticais)
 
-> **Estado atual (jun/2026):** Fatias 0–2 concluídas; **Fatia 3 em andamento**. O **port do mockup** `_mockups/ship-render.html` para o `ShipView` real **foi feito** (antecipado da Fatia 5 a pedido do autor): `SpaceBackground` + `ShipFX` (starfield/jatos/bob), nave em render único, `ShipRoom` (robô direcional com perambular/foco→trabalho/partículas/glow), e o **build mode** portado como **feature do usuário** (`ShipBuilder`/`RoomDecor` + props persistidos). Já no app: roster (ADR-0010), gamificação/XP (TopHUD/XPRewardToast), card do agente (§10.2), customização (props + zoom/espaço), e a **rota aceitando a config editada do cliente** (prompt/capacidade/modelo da instância valem no LLM; premium-sem-BYOK cai pro host com aviso — ADR-0010 #8). **Criar agente em célula vaga** funciona (clicar "+ AGENTE" → `createAgent` + card no editor; ciclo criar→editar→usar fechado; agentes custom são host-only por ora). **Trava por `unlockLevel` removida** (agentes sempre disponíveis); a única progressão são os **cosméticos** (catálogo + auto-unlock + **render** prontos: assets em `public/ship/cosmetics/`, overlay direcional no robô + retrato do card + seletor; falta só **calibração fina** do encaixe na cabeça). Falta na Fatia 3: casco neutro (ADR-0010) e calibração fina de coordenadas.
+> **Estado atual (jun/2026):** Fatias 0–2 concluídas; **Fatia 3 em andamento**. O **port do mockup** `_mockups/ship-render.html` para o `ShipView` real **foi feito** (antecipado da Fatia 5 a pedido do autor): `SpaceBackground` + `ShipFX` (starfield/jatos/bob), nave em render único, `ShipRoom` (robô direcional com perambular/foco→trabalho/partículas/glow), e o **build mode** portado como **feature do usuário** (`ShipBuilder`/`RoomDecor` + props persistidos). Já no app: roster (ADR-0010), gamificação/XP (TopHUD/XPRewardToast), card do agente (§10.2), customização (props + zoom/espaço), e a **rota aceitando a config editada do cliente** (prompt/capacidade/modelo da instância valem no LLM; premium-sem-BYOK cai pro host com aviso — ADR-0010 #8). **Criar agente em célula vaga** funciona (clicar "+ AGENTE" → `createAgent` + card no editor; ciclo criar→editar→usar fechado; agentes custom são host-only por ora). **Trava por `unlockLevel` removida** (agentes sempre disponíveis). A progressão por **cosméticos** foi **REMOVIDA por ora** (ADR-0009 atualizada — a camada sobreposta não encaixava; volta via **skin-swap** no backlog); o level-up anima mas não destrava nada.
 
 - **Fatia 0 — Esqueleto que roda:** ✅ Next.js 15 + TS + Tailwind + tokens.
 - **Fatia 1 — Missão real ponta-a-ponta:** ✅ NEXUS → API Route proxy → Gemini streaming → terminal. *Risco técnico maior eliminado.*
 - **Fatia 2 — A Nave (top-down/FTL) + 5 agentes:** ✅ `ShipView` com casco PNG (gerado por IA, recortado), 8 módulos (5 agentes + 3 vagos), **clicar-pra-focar**, console docado + prompt pequeno, **robôs** (idle/working, tingidos por agente via `hue-rotate`). Rota com **protocolo de eventos** (`step`/`token`/`done`/`error`). **ARIA + busca real (Tavily)** com passos visíveis. Ver §10.1.
   - _Pendência de polimento:_ módulos maiores/mais "cômodo" (limitado pela altura do convés — eventual casco com convés mais alto); afinar tints; assets `equip-*`.
-- **Fatia 3 — Gamificação local + Construtor de agentes:** XP/níveis em `localStorage`, `TopHUD`, `XPRewardToast`, desbloqueio dos módulos vagos, level-up. **Nasce *cosmetic-aware*** (ADR-0009) e **roster/blueprint-aware** (ADR-0010): storage guarda `unlockedCosmetics[]` + o **Roster** (instâncias de Agente, copy-on-write dos 5 Blueprints). Inclui a **UI do construtor** (editar/criar/apagar Agente: nome, cor, `role`, prompt, capacidades, modelo) e o **refactor de casco** puxado da Fatia 5 (casco neutro de 8 células + cor da sala por código), que o construtor exige. Fatia grande por decisão consciente (inchaço aceito). ⬅️ **próxima**
-- **Fatia 4 — Proteção + BYOK:** rate-limit por IP, kill-switch de orçamento, campo de BYOK opcional.
-- **Fatia 5 — Polimento + deploy final:** responsividade, deploy Vercel, GIF/Loom. Inclui a **camada de cosméticos** (ADR-0009): render dos cosméticos sobre o robô via âncora por direção/frame, equipar/desequipar a partir do que está desbloqueado, e **estados/interações novos** (celebração no level-up, reação ao foco, micro-interação no clique/hover).
+- **Fatia 3 — Gamificação local + Construtor de agentes:** XP/níveis em `localStorage`, `TopHUD`, `XPRewardToast`, desbloqueio dos módulos vagos, level-up. **Roster/blueprint-aware** (ADR-0010): storage guarda o **Roster** (instâncias de Agente, copy-on-write dos 5 Blueprints). _(O `unlockedCosmetics[]` da ADR-0009 foi removido junto com a feature de cosméticos.)_ Inclui a **UI do construtor** (editar/criar/apagar Agente: nome, cor, `role`, prompt, capacidades, modelo) e o **refactor de casco** puxado da Fatia 5 (casco neutro de 8 células + cor da sala por código), que o construtor exige. Fatia grande por decisão consciente (inchaço aceito). ⬅️ **próxima**
+- **Fatia 4 — Proteção + BYOK:** ✅ guards server-side em `src/lib/guards/` (`rateLimit.ts` = janela fixa por IP, default 10/60s, env `RATE_LIMIT_PER_IP`; `budget.ts` = kill-switch de orçamento diário global, só o host conta, env `DAILY_BUDGET_USD`, ausente = sem teto; `clientIp` por `x-forwarded-for`). A rota aplica **rate-limit → kill-switch** antes do LLM e **contabiliza o gasto estimado** do host ao concluir. **BYOK na UI:** `settingsStore` (chave OpenRouter no `localStorage`) + botão "CHAVE BYOK" no header (`components/hud/ByokKey.tsx`); `ShipView` passa a chave para a missão; premium sem BYOK cai pro host com aviso (ADR-0010 #8). _Ressalva conhecida:_ estado dos guards é em memória por instância (serverless não compartilha) — defesa best-effort; limitador forte (Upstash/Redis) fica no backlog.
+- **Fatia 5 — Polimento + deploy final:** responsividade, deploy Vercel, GIF/Loom. ~~Inclui a camada de cosméticos (ADR-0009)~~ _(cosméticos **removidos por ora**; quando voltarem será via skin-swap — backlog)_. Inclui **estados/interações novos** (celebração no level-up, reação ao foco, micro-interação no clique/hover).
+  - **Repaginada de HUD/Terminal + Manifesto (ADR-0011) — em andamento:** drawer de gerência em overlay (Roster + progressão + ajustes), topo fino com pip de nível, e dock de terminal completo (avatar, chips, contador de tokens, scanlines, borda no accent). Assinatura = "trilho do manifesto" na cor da sala + cascata de power-up. _(Antecipado da Fatia 5 a pedido do autor.)_
 
 ### Protótipo visual da nave — `_mockups/ship-render.html` (jun/2026)
 Antes de portar pra componentes React, a cena foi prototipada em HTML/CSS/JS puro, validando: **render único** da nave como fundo (`ship-render.png`); módulos posicionados por % sobre as salas (caixas afináveis); **máquina de estados do robô** (idle/walk/working) com perambular em rajadas dentro da sala; **clique no robô** pra focar (glow seguindo a silhueta do sprite + nome flutuante acima dele); **glow neon ambiente por sala** (CSS `mix-blend-mode:screen`, cor do agente); console docado com streaming; e **canvas de FX** (starfield direita→esquerda com parallax + jatos dos propulsores). Mockups anteriores (descartáveis): `ship-code-only.html` (POC procedural rejeitado), `ship-topdown.html`. Esses aprendizados serão portados pro `ShipView` real na Fatia 5.
@@ -396,7 +400,7 @@ DAILY_BUDGET_USD=5                    # kill-switch de orçamento
 RATE_LIMIT_PER_IP=10                  # missões/IP/janela
 # === APP ===
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME=NEXUS HUB
+NEXT_PUBLIC_APP_NAME=STARDECK
 # === FASE 2 (diferido) ===
 # NEXT_PUBLIC_SUPABASE_URL=...
 # SUPABASE_SERVICE_ROLE_KEY=...
@@ -467,6 +471,7 @@ NEXT_PUBLIC_APP_NAME=NEXUS HUB
 - **(E) Mais estados/interações.** Ampliar a máquina de estados do robô além de idle/walk/working: ex. **celebração no level-up**, reação ao foco, micro-interação no clique/hover. (Detalhamento dos estados fica na Fatia 5.)
 **Razão:** regra de desempate do §1 (**portfólio vence**) — cosméticos entregam "vivo" + gancho de progressão **sem** multiplicar arte por agente nem virar um editor de personagem (que seria projeto à parte e canibalizaria o foco na IA real).
 **Consequência:** o custo de assets passa a ser **por cosmético** (não por robô); é preciso um pipeline de geração de cosméticos com âncora + slicer + JSON de offsets; a Fatia 3 ganha campos de cosmético no storage; ADR-0007/0008 atualizadas na cláusula de "variedade".
+**Atualização (FEATURE REMOVIDA por ora — a pedido do autor):** tanto o offset global quanto o refinamento por **mount points por frame** (calibrador dev incluso) foram testados e o **resultado visual não agradou** — a sobreposição de uma camada 2D recortada sobre o sprite nunca "encaixa" como num jogo profissional. **Decidido remover a feature de cosméticos inteira do código** (catálogo, anchors, calibrador, camada `.ship-cosmetic`, campos `unlockedCosmetics`/`equippedCosmetic`, seletor no editor, overlay no retrato, anúncio no toast). Os PNGs em `public/ship/cosmetics/` ficam (inertes) para referência. **Direção futura (quando voltar):** abandonar a camada sobreposta e ir para **skin-swap** — sprite sheets do robô **já desenhados com o cosmético** (equipar = trocar o sheet), encaixe perfeito por construção. Isso **reverteria** o ponto (D) ("nunca assado no sprite"). **Consequência imediata:** a gamificação (XP/níveis) fica **sem recompensa de desbloqueio** até os cosméticos voltarem — o level-up ainda anima, mas não destrava nada. ADR-0009 fica como registro; a feature está **diferida pro backlog**.
 
 ### ADR-0010 — Agentes customizáveis pelo ator (construtor completo) sobre grade fixa
 **Contexto:** a premissa do projeto é que cada pessoa monte agentes que atendam à **sua** necessidade ("nem todo mundo precisa de um especialista em SQL"). Hoje os agentes são fixos: nome/cor/quadrante/função fixos, definidos como módulos estáticos em `src/agents/`. "custom agents" estava no backlog pós-MVP; esta ADR **promove ao MVP**.
@@ -484,6 +489,20 @@ NEXT_PUBLIC_APP_NAME=NEXUS HUB
 **Atualização (build mode = feature do usuário):** o autor decidiu que a **customização da nave** inclui **decorar as salas com props** (mobília/equipamento). O antigo "build mode" do mockup (autoria de props com paleta + arrastar/soltar + snap na grade, ligado por tecla-E dev) foi **portado como feature do usuário final** — toggle "CUSTOMIZAR NAVE" no HUD. Os props são **persistidos por célula** no `localStorage` (`roomProps: Record<cell, PropPlacement[]>` no roster store). Cobre salas de agente **e** células vagas. Componentes: `ShipBuilder` (paleta + drag/drop/snap), `RoomDecor` (grid + props por sala). Catálogo em `src/lib/ship/props.ts`.
 **Zoom/espaço da nave:** controle "espaço" (−/+) no HUD que **encolhe robôs e props** (`shipZoom` persistido no roster store; `scale = 1/shipZoom`). Como a nave já é limitada pela altura da tela, "esticar a nave" transbordaria — então a impressão de "mais espaço" vem de encolher os sprites, mantendo a nave encaixada. Não-destrutivo (o `w` dos props é base; o zoom é só multiplicador de exibição). Robô escala via wrapper `.ship-bot-wrap` (não conflita com flip/breathe).
 
+### ADR-0011 — Gerência via "Manifesto" (drawer em overlay) + topo fino + dock de terminal
+**Contexto:** o HUD acumulou controles no topo (TopHUD de XP, CHAVE BYOK, espaço/zoom, CUSTOMIZAR NAVE) e não havia um lugar para **navegar/observar o Roster** (estado dos agentes de relance). O autor pediu um menu lateral de gerência + repaginada do Terminal/HUD. Tensão: um painel de gerência pode roubar o protagonismo da **Nave** (ADR-0007, a assinatura) e duplicar o **card §10.2** (o construtor com rosto), criando duas fontes de edição.
+**Decisão (grelha grill-with-docs):**
+1. **Manifesto = complemento/navegação, não editor.** O drawer observa o **Roster** e dirige o foco; **a edição continua só no card §10.2** (uma fonte de verdade). Rejeitadas: "gerenciador que absorve o editor" e "centro de controle com nave secundária".
+2. **Drawer em overlay, escondido por padrão** (☰ no topo + tecla; Esc/scrim fecham). A **Nave nunca encolhe**; ao abrir, escurece atrás (casa com o "spotlight no foco" do backlog). Rejeitados: sidebar fixo (encolhe a nave) e fixo-no-desktop/drawer-no-mobile.
+3. **Linha do Manifesto = Atividade + badges (modelo/busca).** Stats de gamificação e edição ficam **só no card** — a linha é scan rápido, não clone do card.
+4. **Seleção foca, não edita.** Clicar numa linha **foca** o Agente (re-mira o console) e o drawer **permanece aberto**; um botão **"editar"** fecha o drawer e abre o card. Ações destrutivas/duplicar/restaurar ficam no card. O Manifesto só faz nível-de-roster ("+ novo agente") e focar.
+5. **Topo vira barra de status fina** (marca + Agente focado + Atividade + pip de nível + ☰). O Manifesto **absorve** progressão detalhada + ajustes (espaço/zoom, customizar nave, CHAVE BYOK), emagrecendo o header.
+6. **Terminal = dock completo** (§12): avatar do Agente (reusa `BotSprite`, recolor por código), chips de status (modelo/busca/Atividade), contador de tokens ao vivo (≈ chars/4 do stream), scanlines, borda no `accent`.
+7. **Assinatura visual — "trilho do manifesto":** cada linha tem um trilho de `accent` na cor da sala do Agente (mesmo `--accent`/`--hue` da ADR-0010), com a Atividade como nó pulsante. Amarra Manifesto ↔ sala pela cor (o mecanismo-núcleo). Risco assumido (um só): cascata de power-up dos trilhos ao abrir, respeitando `prefers-reduced-motion`.
+**Razão:** regra de desempate do §1 (**portfólio vence**) — o overlay mantém a Nave intacta como hero e o Manifesto vira um diferencial de "gerência de tripulação" sem virar dashboard SaaS; manter a edição no card evita duas superfícies brigando. Dentro dos tokens do §11 (sem paleta nova).
+**Consequência:** supera o item "Terminal/HUD" do §12 e o "campo BYOK no topo" da Fatia 4 (BYOK migra pro Manifesto); novo estado `manifestoOpen` + ação `focusOnly` no `shipStore` (foco sem abrir card); `TopHUD` (progressão completa) migra pra dentro do Manifesto e o topo ganha um pip compacto; `ModuleConsole` é repaginado. Componentes novos: `components/hud/Manifesto.tsx`. Risco: estado de Atividade depende do `useMission` (1 missão por vez) — agentes não-focados leem `idle`.
+**Atualização (editor migra do card → Manifesto):** na implementação, o card-editor expandido (§10.2) **estourava a altura** da `<section>` da nave (`overflow-hidden`) e era **cortado pelo terminal docado**. Decisão revisada (a pedido do autor): o **card vira só-leitura** (retrato + nome/role + badges + stats + botão "Editar agente") e **todo o editor migra para o Manifesto** (nova *view de edição*: nome, role, system prompt, busca, modelo, cor, restaurar/apagar). Isso **inverte os pontos #1 e #4** (que punham a edição no card) — mas **continua uma só superfície de edição** (relocada, não duplicada), então a tensão original (duas fontes) se mantém resolvida. Para preservar o **preview ao vivo** (§10.2), o scrim do Manifesto **fica leve na view de edição** (a nave aparece atrás à direita; nome/cor refletem em tempo real). Novo estado `editingSlug` + ações `editAgent`/`closeEditor` no `shipStore`; `cardEditing`/`defaultEditing` removidos; editor extraído para `components/ship/AgentEditor.tsx` (reusado pelo Manifesto). O drawer é full-height e rola sozinho → o overflow não acontece mais.
+
 ---
 
-*Documento mantido por AFS Intelligence | Projeto: NEXUS HUB | Última consolidação: 2026-06-27*
+*Documento mantido por AFS Intelligence | Projeto: STARDECK | Última consolidação: 2026-06-28*

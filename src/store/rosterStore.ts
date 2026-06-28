@@ -18,7 +18,7 @@ const DEFAULT_HOST_MODEL = "gemini-2.5-flash";
 
 /** Semeia uma instância de Agente a partir de um Blueprint (copy-on-write). */
 function seedFromBlueprint(bp: AgentConfig, cell: number): AgentInstance {
-  return { ...bp, blueprintSlug: bp.slug, cell, equippedCosmetic: null };
+  return { ...bp, blueprintSlug: bp.slug, cell };
 }
 
 /** Roster inicial: os 5 Blueprints montados nas células 0..4 (ADR-0010). */
@@ -118,7 +118,6 @@ export const useRosterStore = create<RosterState>()(
           xpReward: 80,
           blueprintSlug: null,
           cell,
-          equippedCosmetic: null,
           ...patch,
         };
         set((s) => ({ instances: [...s.instances, fresh] }));

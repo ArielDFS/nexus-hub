@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { MissionReward } from "@/store/profileStore";
-import { cosmeticName } from "@/lib/ship/cosmetics";
 
 /** Recompensa a exibir; `id` (timestamp) força reanimar a cada missão. */
 export type ToastReward = MissionReward & { id: number };
@@ -15,14 +14,11 @@ interface XPRewardToastProps {
 
 /** Toast "+XP" (e level-up) que sobe e some ao concluir uma missão (§9, §10). */
 export function XPRewardToast({ reward, onDone }: XPRewardToastProps) {
-  const hasCosmetic = (reward?.unlockedCosmetics?.length ?? 0) > 0;
-
   useEffect(() => {
     if (!reward) return;
-    const longer = reward.leveledUp || hasCosmetic;
-    const t = setTimeout(onDone, longer ? 3400 : 2400);
+    const t = setTimeout(onDone, reward.leveledUp ? 3400 : 2400);
     return () => clearTimeout(t);
-  }, [reward, onDone, hasCosmetic]);
+  }, [reward, onDone]);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center">
@@ -49,18 +45,6 @@ export function XPRewardToast({ reward, onDone }: XPRewardToastProps) {
                 NÍVEL {reward.newLevel} ALCANÇADO
               </motion.span>
             )}
-            {hasCosmetic &&
-              reward.unlockedCosmetics.map((id, i) => (
-                <motion.span
-                  key={id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.35 + i * 0.12, type: "spring", stiffness: 300 }}
-                  className="rounded-full border border-violet/70 bg-void/90 px-3 py-1 font-display text-[10px] font-bold tracking-[0.14em] text-violet shadow-glow-violet"
-                >
-                  COSMÉTICO: {cosmeticName(id).toUpperCase()}
-                </motion.span>
-              ))}
           </motion.div>
         )}
       </AnimatePresence>

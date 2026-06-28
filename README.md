@@ -1,14 +1,14 @@
-# 🛸 NEXUS HUB
+# 🛸 STARDECK
 
-> Uma plataforma web sci-fi onde **agentes de IA são tripulantes de uma nave**. Você recruta agentes, lança missões (tarefas de IA reais) e acompanha cada um trabalhando no seu módulo — em tempo real, com streaming.
+> Uma plataforma web sci-fi onde **agentes de IA são tripulantes de uma nave**. Você monta sua tripulação, lança missões (tarefas de IA reais) e acompanha cada um trabalhando no seu módulo — em tempo real, com streaming.
 
-**Gamified AI Agent Hub** · feito por Ariel Ferreira (AFS Intelligence) · `Next.js 15` + `TypeScript`
+**Gamified AI Agent Crew** · feito por Ariel Ferreira (AFS Intelligence) · `Next.js 15` + `TypeScript`
 
 ---
 
 ## ✨ O que é
 
-NEXUS HUB apresenta agentes de IA como **personagens** dentro de uma nave-mãe (vista top-down, estilo _FTL_). Cada agente vive em um módulo e executa um tipo de missão com um LLM real. A resposta aparece em **streaming** num console, e — no caso da ARIA — você vê os **passos de busca na web acontecendo** antes da resposta.
+STARDECK apresenta agentes de IA como **personagens** dentro de uma nave-mãe (vista top-down, estilo _FTL_). Cada agente vive em um módulo e executa um tipo de missão com um LLM real. A resposta aparece em **streaming** num console, e — no caso da ARIA — você vê os **passos de busca na web acontecendo** antes da resposta.
 
 É um projeto de portfólio focado em **AI Engineering + Full-Stack + UX**.
 
@@ -43,7 +43,7 @@ Decisões de arquitetura documentadas em [CLAUDE.md](./CLAUDE.md) (seção ADRs)
 
 ```bash
 git clone <repo>
-cd nexus-hub
+cd stardeck
 npm install
 cp .env.local.example .env.local   # preencha as chaves
 npm run dev                        # http://localhost:3000
@@ -67,4 +67,4 @@ MIT.
 
 ---
 
-<sub>Projeto: NEXUS HUB · AFS Intelligence</sub>
+<sub>Projeto: STARDECK · AFS Intelligence</sub>

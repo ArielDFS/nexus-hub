@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMission } from "@/hooks/useMission";
 import { useShipStore } from "@/store/shipStore";
-import {
-  useRosterStore, SHIP_CELLS, byCell, ZOOM_STEP,
-} from "@/store/rosterStore";
+import { useRosterStore, SHIP_CELLS, byCell } from "@/store/rosterStore";
 import { useProfileStore } from "@/store/profileStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useHydrated } from "@/hooks/useHydrated";
+import { levelForXp, levelProgress } from "@/lib/gamification/levels";
 import { ROOMS, SHIP_ASPECT } from "@/lib/ship/rooms";
-import { TopHUD } from "@/components/hud/TopHUD";
+import { Manifesto } from "@/components/hud/Manifesto";
 import { XPRewardToast, type ToastReward } from "@/components/hud/XPRewardToast";
 import { SpaceBackground } from "./SpaceBackground";
 import { ShipFX } from "./ShipFX";
@@ -22,15 +23,17 @@ export function ShipView() {
   const focusedSlug = useShipStore((s) => s.focusedSlug);
   const setFocus = useShipStore((s) => s.setFocus);
   const cardOpen = useShipStore((s) => s.cardOpen);
-  const cardEditing = useShipStore((s) => s.cardEditing);
   const closeCard = useShipStore((s) => s.closeCard);
   const buildMode = useShipStore((s) => s.buildMode);
-  const toggleBuild = useShipStore((s) => s.toggleBuild);
+  const toggleManifesto = useShipStore((s) => s.toggleManifesto);
+  const editAgent = useShipStore((s) => s.editAgent);
   const instances = useRosterStore((s) => s.instances);
   const createAgent = useRosterStore((s) => s.createAgent);
   const shipZoom = useRosterStore((s) => s.shipZoom);
-  const setShipZoom = useRosterStore((s) => s.setShipZoom);
   const recordMission = useProfileStore((s) => s.recordMission);
+  const xp = useProfileStore((s) => s.xp);
+  const byokKey = useSettingsStore((s) => s.byokKey);
+  const hydrated = useHydrated();
   const mission = useMission();
   const [reward, setReward] = useState<ToastReward | null>(null);
   const shipRef = useRef<HTMLDivElement>(null);
@@ -45,62 +48,104 @@ export function ShipView() {
     mission.agentSlug === slug &&
     (mission.status === "PROCESSING" || mission.status === "STREAMING");
 
-  // criar agente numa célula vaga → foca e abre o card já no editor
+  // Atividade ao vivo: quem roda a missão real agora (1 por vez — ADR-0007).
+  const workingSlug =
+    mission.status === "PROCESSING" || mission.status === "STREAMING"
+      ? mission.agentSlug
+      : null;
+  const focusedWorking = workingSlug === focusedAgent.slug;
+
+  // pip de nível no topo (progressão detalhada vive no Manifesto)
+  const shownXp = hydrated ? xp : 0;
+  const level = levelForXp(shownXp);
+  const progress = levelProgress(shownXp);
+
+  // criar agente numa célula vaga → abre o editor no Manifesto (ADR-0011)
   const handleCreate = (cell: number) => {
     const slug = createAgent(cell);
-    if (slug) setFocus(slug, true);
+    if (slug) editAgent(slug);
   };
+
+  // tecla M abre/fecha o Manifesto (ignora quando digitando num campo).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        toggleManifesto();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleManifesto]);
 
   return (
     <main className="relative flex h-screen flex-col overflow-hidden">
       <SpaceBackground />
       <ShipFX shipRef={shipRef} />
 
-      {/* cabeçalho */}
-      <header className="relative z-10 flex items-center justify-between border-b border-border/50 px-6 py-2 backdrop-blur-sm">
+      {/* barra de status fina (ADR-0011) — gerência mora no Manifesto (☰) */}
+      <header className="relative z-30 flex items-center justify-between border-b border-border/50 px-4 py-2 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <span className="h-2 w-2 animate-pulse-cyan rounded-full bg-cyan" />
-          <h1 className="font-display text-base font-bold tracking-[0.2em]">
-            NEXUS<span className="text-cyan"> HUB</span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-5">
-          <TopHUD />
-          <div className="flex items-center gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-text-dim">
-              espaço
-            </span>
-            <button
-              type="button"
-              aria-label="Menos espaço"
-              onClick={() => setShipZoom(shipZoom - ZOOM_STEP)}
-              className="flex h-5 w-5 items-center justify-center rounded border border-border font-mono text-xs text-text-muted transition hover:border-cyan hover:text-cyan"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              aria-label="Mais espaço"
-              onClick={() => setShipZoom(shipZoom + ZOOM_STEP)}
-              className="flex h-5 w-5 items-center justify-center rounded border border-border font-mono text-xs text-text-muted transition hover:border-cyan hover:text-cyan"
-            >
-              +
-            </button>
-          </div>
           <button
             type="button"
-            onClick={toggleBuild}
-            className="rounded border px-2.5 py-1 font-display text-[9px] tracking-[0.12em] transition"
-            style={{
-              borderColor: buildMode ? "#00F5FF" : "#1E3A5F",
-              color: buildMode ? "#00F5FF" : "#5A7A94",
-              boxShadow: buildMode ? "0 0 12px #00F5FF55" : undefined,
-            }}
+            onClick={toggleManifesto}
+            aria-label="Abrir Manifesto (tecla M)"
+            title="Tripulação · M"
+            className="flex h-7 w-7 flex-col items-center justify-center gap-[3px] rounded border border-border transition hover:border-cyan"
           >
-            {buildMode ? "✓ CUSTOMIZANDO" : "CUSTOMIZAR NAVE"}
+            <span className="h-px w-3.5 bg-text-muted transition-colors" />
+            <span className="h-px w-3.5 bg-text-muted transition-colors" />
+            <span className="h-px w-3.5 bg-text-muted transition-colors" />
+          </button>
+          <h1 className="font-display text-sm font-bold tracking-[0.2em]">
+            STAR<span className="text-cyan">DECK</span>
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* agente focado + Atividade */}
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${focusedWorking ? "animate-pulse" : ""}`}
+              style={{
+                backgroundColor: focusedAgent.accentColor,
+                boxShadow: `0 0 6px ${focusedAgent.accentColor}`,
+              }}
+            />
+            <span
+              className="font-display text-[11px] tracking-[0.14em]"
+              style={{ color: focusedAgent.accentColor }}
+            >
+              {focusedAgent.name}
+            </span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-text-muted">
+              {focusedWorking ? "em missão" : "focado"}
+            </span>
+          </div>
+
+          {/* pip de nível → abre o Manifesto (progressão detalhada lá dentro) */}
+          <button
+            type="button"
+            onClick={toggleManifesto}
+            title="Progressão · Manifesto"
+            className="flex items-center gap-1.5 rounded border border-border px-2 py-1 transition hover:border-cyan"
+          >
+            <span className="font-display text-[10px] font-bold tracking-[0.12em] text-cyan">
+              NÍV {level.level}
+            </span>
+            <span className="h-1 w-12 overflow-hidden rounded-full bg-surface-2">
+              <span
+                className="block h-full rounded-full bg-cyan shadow-glow-cyan transition-[width] duration-500 ease-out"
+                style={{ width: `${Math.round(progress * 100)}%` }}
+              />
+            </span>
           </button>
         </div>
       </header>
+
+      <Manifesto workingSlug={workingSlug} />
 
       {/* convés — a nave (render real) com as salas por cima */}
       <section className="relative z-10 flex flex-1 items-center justify-center overflow-hidden p-2">
@@ -165,7 +210,6 @@ export function ShipView() {
               agent={focusedAgent}
               open={cardOpen}
               onClose={closeCard}
-              defaultEditing={cardEditing}
             />
           )}
         </div>
@@ -184,6 +228,7 @@ export function ShipView() {
             isThisAgent={mission.agentSlug === focusedAgent.slug}
             onLaunch={(input) =>
               mission.run(focusedAgent.slug, input, {
+                apiKey: byokKey || undefined,
                 agent: {
                   systemPrompt: focusedAgent.systemPrompt,
                   model: focusedAgent.model,

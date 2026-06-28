@@ -40,8 +40,6 @@ export interface AgentInstance extends AgentConfig {
   blueprintSlug: string | null;
   /** Célula do casco que ocupa (0..7). */
   cell: number;
-  /** Cosmético equipado no robô (ADR-0009). */
-  equippedCosmetic: string | null;
 }
 
 /** Helper de capacidade (legível nos consumidores). */

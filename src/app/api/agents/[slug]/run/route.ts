@@ -5,6 +5,9 @@ import { streamChatCompletion, type ChatMessage } from "@/lib/llm/openrouter";
 import { geminiDelta, openRouterDelta, type DeltaExtractor } from "@/lib/llm/stream";
 import { emit, readSSEDeltas } from "@/lib/llm/events";
 import { tavilySearch, buildSearchContext } from "@/lib/search/tavily";
+import {
+  clientIp, rateLimit, budgetOk, estimateCostUsd, recordSpend,
+} from "@/lib/guards";
 
 // Streaming exige runtime Node (não Edge) para o pipe de ReadableStream.
 export const runtime = "nodejs";
@@ -76,6 +79,28 @@ export async function POST(
       {
         error:
           "Nenhuma API key disponível. Configure GEMINI_API_KEY no servidor ou forneça a sua chave OpenRouter (BYOK) para o modelo premium.",
+      },
+      { status: 503 },
+    );
+  }
+
+  // ===== Guards de custo (ADR-0002) =====
+  // 1) Rate-limit por IP — vale para qualquer missão (proteção de abuso da rota).
+  const rl = rateLimit(clientIp(req));
+  if (!rl.ok) {
+    return Response.json(
+      {
+        error: `Muitas missões em pouco tempo. Tente novamente em ${rl.retryAfterSec}s.`,
+      },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+  // 2) Kill-switch de orçamento — só o host conta (premium é BYOK do visitante).
+  if (!usePremium && !budgetOk()) {
+    return Response.json(
+      {
+        error:
+          "O orçamento diário do demo foi atingido. Cole sua própria chave OpenRouter (BYOK) e selecione o modelo premium para continuar.",
       },
       { status: 503 },
     );
@@ -174,9 +199,18 @@ export async function POST(
           return;
         }
 
+        let outputChars = 0;
         await readSSEDeltas(upstream.body, extractor, (text) => {
+          outputChars += text.length;
           emit(controller, { type: "token", text });
         });
+
+        // Contabiliza o gasto do host no orçamento diário (premium não conta).
+        if (!usePremium) {
+          recordSpend(
+            estimateCostUsd(systemPrompt.length + userMessage.length, outputChars),
+          );
+        }
 
         emit(controller, { type: "done", modelUsed });
         controller.close();
