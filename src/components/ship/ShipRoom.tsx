@@ -415,7 +415,10 @@ export function ShipRoom({
           style={{ "--bot-scale": scale } as React.CSSProperties}
         >
           <div className="ship-shadow" />
-          <div ref={botRef} className="ship-bot" />
+          {/* corpo: carrega a respiração (translateY) sem mover a sombra (ADR-0013) */}
+          <div className="ship-body">
+            <div ref={botRef} className="ship-bot" />
+          </div>
         </div>
       </div>
     </div>

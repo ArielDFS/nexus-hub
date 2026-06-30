@@ -201,14 +201,24 @@ body {
   /* posição dirigida frame-a-frame pelo loop rAF (ADR-0012); sem transição CSS. */
   z-index: 2;
 }
-.ship-unit.idle {
+/* respiração APENAS no corpo (.ship-body), não na .ship-unit — senão a sombra
+   de contato (irmã, no chão) subiria junto e o robô "flutuaria" (ADR-0013). */
+.ship-unit.idle .ship-body {
   animation: ship-breathe 3s ease-in-out infinite;
 }
 @keyframes ship-breathe {
   50% { transform: translateY(-2.2px); }
 }
+/* sombra reage em contrafase: encolhe/clareia quando o corpo sobe → "peso". */
+.ship-unit.idle .ship-shadow {
+  animation: ship-shadow-breathe 3s ease-in-out infinite;
+}
+@keyframes ship-shadow-breathe {
+  50% { transform: translate(-50%, -50%) scale(0.82); opacity: 0.72; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .ship-unit.idle { animation: none; }
+  .ship-unit.idle .ship-body,
+  .ship-unit.idle .ship-shadow { animation: none; }
 }
 
 .ship-label {
@@ -335,6 +345,13 @@ body {
   inset: 0;
   transform: scale(var(--bot-scale, 1));
   transform-origin: center;
+}
+
+/* corpo do robô — passthrough que recebe a respiração sem arrastar a sombra.
+   inset:0 mantém o mesmo bloco de contenção do .ship-bot (left/top:50%). */
+.ship-body {
+  position: absolute;
+  inset: 0;
 }
 
 /* sombra de contato no chão — segue o robô e dá peso/grounding (ADR-0013) */
